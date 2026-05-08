@@ -90,14 +90,3 @@ Install pre-commit hooks:
 ```bash
 make pre-commit-install
 ```
-
-## Publishing
-
-The GitHub workflow publishes to PyPI when a GitHub Release is published.
-Configure PyPI Trusted Publishing with:
-
-* PyPI project name: `fastmcp-dishka`
-* Owner: `vfaddey`
-* Repository: `fastmcp-dishka`
-* Workflow filename: `ci.yml`
-* Environment: `pypi`
