@@ -1,0 +1,76 @@
+[project]
+name = "fastmcp-dishka"
+version = "0.1.0"
+description = "Dishka dependency injection integration for FastMCP"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Faddey Valuev", email = "vfaddey@yandex.ru" }
+]
+requires-python = ">=3.13"
+keywords = ["dependency-injection", "dishka", "fastmcp", "mcp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+dependencies = [
+    "dishka>=1.10.1",
+    "fastmcp>=3.2.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/vfaddey/fastmcp-dishka"
+Source = "https://github.com/vfaddey/fastmcp-dishka"
+Tracker = "https://github.com/vfaddey/fastmcp-dishka/issues"
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.12",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=fastmcp_dishka",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-fail-under=90",
+]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["fastmcp_dishka"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.ruff]
+line-length = 88
+src = ["src", "tests"]
+target-version = "py313"
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
+
+[tool.ruff.format]
+docstring-code-format = true

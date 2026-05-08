@@ -1,0 +1,19 @@
+minimum_pre_commit_version: "4.0.0"
+exclude: "^jobify-dishka/"
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff-check
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: uv run python -m pytest
+        language: system
+        pass_filenames: false
+        always_run: true
