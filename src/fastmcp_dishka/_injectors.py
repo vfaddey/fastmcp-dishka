@@ -1,6 +1,6 @@
 import inspect
 from collections.abc import Awaitable, Callable
-from typing import Any, overload
+from typing import Any, ParamSpec, TypeVar, overload
 
 from dishka.integrations.base import wrap_injection
 
@@ -8,6 +8,9 @@ from ._getters import (
     get_async_container_from_args_kwargs,
     get_sync_container_from_args_kwargs,
 )
+
+ParamsP = ParamSpec("ParamsP")
+ReturnT = TypeVar("ReturnT")
 
 
 def _copy_fastmcp_metadata(
@@ -19,7 +22,7 @@ def _copy_fastmcp_metadata(
         target.__fastmcp__ = metadata  # type: ignore[attr-defined]
 
 
-def inject_async[**ParamsP, ReturnT](
+def inject_async(
     func: Callable[ParamsP, Awaitable[ReturnT]],
 ) -> Callable[ParamsP, Awaitable[ReturnT]]:
     wrapped = wrap_injection(
@@ -33,7 +36,7 @@ def inject_async[**ParamsP, ReturnT](
     return wrapped
 
 
-def inject_sync[**ParamsP, ReturnT](
+def inject_sync(
     func: Callable[ParamsP, ReturnT],
 ) -> Callable[ParamsP, ReturnT]:
     wrapped = wrap_injection(
@@ -48,18 +51,18 @@ def inject_sync[**ParamsP, ReturnT](
 
 
 @overload
-def inject[**ParamsP, ReturnT](
+def inject(
     func: Callable[ParamsP, Awaitable[ReturnT]],
 ) -> Callable[ParamsP, Awaitable[ReturnT]]: ...
 
 
 @overload
-def inject[**ParamsP, ReturnT](
+def inject(
     func: Callable[ParamsP, ReturnT],
 ) -> Callable[ParamsP, ReturnT]: ...
 
 
-def inject[**ParamsP](func: Callable[ParamsP, Any]) -> Callable[ParamsP, Any]:
+def inject(func: Callable[ParamsP, Any]) -> Callable[ParamsP, Any]:
     if inspect.iscoroutinefunction(func) or inspect.isasyncgenfunction(func):
         return inject_async(func)
     return inject_sync(func)

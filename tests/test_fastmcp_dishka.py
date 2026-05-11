@@ -10,6 +10,7 @@ from fastmcp.server.context import Context
 from mcp import types as mt
 
 from fastmcp_dishka import FastMCPProvider, FromDishka, inject, setup_dishka
+from fastmcp_dishka._middlewares import _build_context_data
 
 AppDep = NewType("AppDep", str)
 RequestDep = NewType("RequestDep", object)
@@ -288,3 +289,28 @@ def test_nested_fastmcp_operation_gets_its_own_request_context() -> None:
             await container.close()
 
     asyncio.run(scenario())
+
+
+def test_inject_copies_fastmcp_metadata() -> None:
+    def my_func() -> None:
+        pass
+
+    my_func.__fastmcp__ = {"type": "tool"}  # type: ignore[attr-defined]
+
+    injected = inject(my_func)
+    assert getattr(injected, "__fastmcp__", None) == {"type": "tool"}
+
+
+def test_build_context_data_without_fastmcp_context() -> None:
+    from fastmcp.server.middleware import MiddlewareContext
+
+    context_mock = Mock()
+    context_mock.message = "test_message"
+    context_mock.fastmcp_context = None
+
+    result = _build_context_data(context_mock)
+
+    assert result[MiddlewareContext] == context_mock
+    assert result[str] == "test_message"
+    assert Context not in result
+    assert FastMCP not in result

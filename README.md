@@ -1,13 +1,18 @@
+<div align="center">
+
 # FastMCP Dishka
 
+[![CI](https://github.com/vfaddey/fastmcp-dishka/actions/workflows/ci.yml/badge.svg)](https://github.com/vfaddey/fastmcp-dishka/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/fastmcp-dishka.svg)](https://pypi.org/project/fastmcp-dishka/)
 [![Python](https://img.shields.io/pypi/pyversions/fastmcp-dishka.svg)](https://pypi.org/project/fastmcp-dishka/)
 [![License](https://img.shields.io/pypi/l/fastmcp-dishka.svg)](https://github.com/vfaddey/fastmcp-dishka/blob/main/LICENSE)
 [![Ruff](https://img.shields.io/badge/lint-ruff-46a3ff.svg)](https://github.com/astral-sh/ruff)
-[![Coverage](https://img.shields.io/badge/coverage-90%25%2B-brightgreen.svg)](#development)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](#development)
 
 Integration package for using [dishka](https://dishka.readthedocs.io/) dependency
 injection with [FastMCP](https://gofastmcp.com/) tools, resources, and prompts.
+
+</div>
 
 It provides:
 
