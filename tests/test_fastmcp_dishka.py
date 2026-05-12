@@ -1,16 +1,30 @@
 import asyncio
 from collections.abc import Iterable
-from typing import NewType
+from typing import Any, NewType
 from unittest.mock import Mock
 
 import pytest
-from dishka import Provider, Scope, make_async_container, make_container, provide
+from dishka import (
+    AsyncContainer,
+    Container,
+    Provider,
+    Scope,
+    make_async_container,
+    make_container,
+    provide,
+)
+from dishka.exception_base import DishkaError
 from fastmcp import FastMCP
 from fastmcp.server.context import Context
 from mcp import types as mt
 
 from fastmcp_dishka import FastMCPProvider, FromDishka, inject, setup_dishka
-from fastmcp_dishka._middlewares import _build_context_data
+from fastmcp_dishka._getters import get_container
+from fastmcp_dishka._middlewares import (
+    DishkaAsyncMiddleware,
+    DishkaSyncMiddleware,
+    _build_context_data,
+)
 
 AppDep = NewType("AppDep", str)
 RequestDep = NewType("RequestDep", object)
@@ -314,3 +328,110 @@ def test_build_context_data_without_fastmcp_context() -> None:
     assert result[str] == "test_message"
     assert Context not in result
     assert FastMCP not in result
+
+
+def test_get_container_without_fastmcp_context_raises() -> None:
+    with pytest.raises(DishkaError, match="FastMCP Context is not available"):
+        get_container()
+
+
+def test_async_middleware_without_fastmcp_context() -> None:
+    from fastmcp.server.middleware import MiddlewareContext
+
+    async def scenario() -> None:
+        provider = AppProvider()
+        container = make_async_container(provider, FastMCPProvider())
+        middleware = DishkaAsyncMiddleware(container)
+        context = MiddlewareContext(message=Mock(), fastmcp_context=None)
+
+        async def call_next(_: MiddlewareContext[Any]) -> str:
+            return "ok"
+
+        try:
+            result = await middleware._run_with_container(context, call_next)
+            assert result == "ok"
+        finally:
+            await container.close()
+
+    asyncio.run(scenario())
+
+
+def test_sync_middleware_without_fastmcp_context() -> None:
+    from fastmcp.server.middleware import MiddlewareContext
+
+    async def scenario() -> None:
+        provider = AppProvider()
+        container = make_container(provider, FastMCPProvider())
+        middleware = DishkaSyncMiddleware(container)
+        context = MiddlewareContext(message=Mock(), fastmcp_context=None)
+
+        async def call_next(_: MiddlewareContext[Any]) -> str:
+            return "ok"
+
+        try:
+            result = await middleware._run_with_container(context, call_next)
+            assert result == "ok"
+        finally:
+            container.close()
+
+    asyncio.run(scenario())
+
+
+def test_async_initialize_uses_session_scope() -> None:
+    from fastmcp.server.middleware import MiddlewareContext
+
+    async def scenario() -> None:
+        provider = AppProvider()
+        container = make_async_container(provider, FastMCPProvider())
+        middleware = DishkaAsyncMiddleware(container)
+        mcp = FastMCP("test")
+
+        async with Context(fastmcp=mcp) as fastmcp_context:
+            context = MiddlewareContext(
+                message=Mock(),
+                fastmcp_context=fastmcp_context,
+                method="initialize",
+            )
+
+            async def call_next(_: MiddlewareContext[Any]) -> None:
+                current = get_container()
+                assert isinstance(current, AsyncContainer)
+                return None
+
+            try:
+                result = await middleware.on_initialize(context, call_next)
+                assert result is None
+            finally:
+                await container.close()
+
+    asyncio.run(scenario())
+
+
+def test_sync_initialize_uses_session_scope() -> None:
+    from fastmcp.server.middleware import MiddlewareContext
+
+    async def scenario() -> None:
+        provider = AppProvider()
+        container = make_container(provider, FastMCPProvider())
+        middleware = DishkaSyncMiddleware(container)
+        mcp = FastMCP("test")
+
+        async with Context(fastmcp=mcp) as fastmcp_context:
+            context = MiddlewareContext(
+                message=Mock(),
+                fastmcp_context=fastmcp_context,
+                method="initialize",
+            )
+
+            async def call_next(_: MiddlewareContext[Any]) -> None:
+                current = get_container()
+                assert isinstance(current, Container)
+                return None
+
+            try:
+                result = await middleware.on_initialize(context, call_next)
+                assert result is None
+            finally:
+                container.close()
+
+    asyncio.run(scenario())

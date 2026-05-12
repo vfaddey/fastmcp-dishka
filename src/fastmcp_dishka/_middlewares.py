@@ -1,3 +1,5 @@
+from collections.abc import Generator
+from contextlib import contextmanager
 from typing import Any, Final
 
 from dishka import AsyncContainer, Container, Scope
@@ -6,7 +8,7 @@ from fastmcp.server.context import Context
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from mcp import types as mt
 
-from ._context import current_container
+from ._getters import CONTAINER_STATE_KEY
 
 
 def _build_context_data(context: MiddlewareContext[Any]) -> dict[Any, Any]:
@@ -23,6 +25,22 @@ def _build_context_data(context: MiddlewareContext[Any]) -> dict[Any, Any]:
     return context_data
 
 
+@contextmanager
+def _use_container(
+    context: Context,
+    container: AsyncContainer | Container,
+) -> Generator[None, None, None]:
+    previous = context._request_state.get(CONTAINER_STATE_KEY)
+    context._request_state[CONTAINER_STATE_KEY] = container
+    try:
+        yield
+    finally:
+        if previous is None:
+            context._request_state.pop(CONTAINER_STATE_KEY, None)
+        else:
+            context._request_state[CONTAINER_STATE_KEY] = previous
+
+
 class DishkaAsyncMiddleware(Middleware):
     def __init__(self, container: AsyncContainer) -> None:
         self._container: Final[AsyncContainer] = container
@@ -31,17 +49,30 @@ class DishkaAsyncMiddleware(Middleware):
         self,
         context: MiddlewareContext[Any],
         call_next: CallNext[Any, Any],
+        scope: Scope = Scope.REQUEST,
     ) -> Any:
         context_data = _build_context_data(context)
         async with self._container(
             context=context_data,
-            scope=Scope.REQUEST,
-        ) as request_container:
-            token = current_container.set(request_container)
-            try:
+            scope=scope,
+        ) as scoped_container:
+            fastmcp_context = context.fastmcp_context
+            if fastmcp_context is None:
                 return await call_next(context)
-            finally:
-                current_container.reset(token)
+
+            with _use_container(fastmcp_context, scoped_container):
+                return await call_next(context)
+
+    async def on_initialize(
+        self,
+        context: MiddlewareContext[mt.InitializeRequest],
+        call_next: CallNext[mt.InitializeRequest, mt.InitializeResult | None],
+    ) -> mt.InitializeResult | None:
+        return await self._run_with_container(
+            context,
+            call_next,
+            scope=Scope.SESSION,
+        )
 
     async def on_call_tool(
         self,
@@ -73,17 +104,30 @@ class DishkaSyncMiddleware(Middleware):
         self,
         context: MiddlewareContext[Any],
         call_next: CallNext[Any, Any],
+        scope: Scope = Scope.REQUEST,
     ) -> Any:
         context_data = _build_context_data(context)
         with self._container(
             context=context_data,
-            scope=Scope.REQUEST,
-        ) as request_container:
-            token = current_container.set(request_container)
-            try:
+            scope=scope,
+        ) as scoped_container:
+            fastmcp_context = context.fastmcp_context
+            if fastmcp_context is None:
                 return await call_next(context)
-            finally:
-                current_container.reset(token)
+
+            with _use_container(fastmcp_context, scoped_container):
+                return await call_next(context)
+
+    async def on_initialize(
+        self,
+        context: MiddlewareContext[mt.InitializeRequest],
+        call_next: CallNext[mt.InitializeRequest, mt.InitializeResult | None],
+    ) -> mt.InitializeResult | None:
+        return await self._run_with_container(
+            context,
+            call_next,
+            scope=Scope.SESSION,
+        )
 
     async def on_call_tool(
         self,

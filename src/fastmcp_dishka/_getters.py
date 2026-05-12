@@ -1,13 +1,24 @@
-from typing import Any
+from typing import Any, Final
 
 from dishka import AsyncContainer, Container
 from dishka.exception_base import DishkaError
+from fastmcp.server.dependencies import get_context
 
-from ._context import CONTAINER_NAME, current_container
+CONTAINER_NAME: Final[str] = "dishka_container"
+CONTAINER_STATE_KEY: Final[str] = "fastmcp_dishka_container"
 
 
 def get_container() -> AsyncContainer | Container:
-    container = current_container.get()
+    try:
+        context = get_context()
+    except RuntimeError as exc:
+        msg = (
+            "FastMCP Context is not available. "
+            "Make sure you called setup_dishka() for the FastMCP app."
+        )
+        raise DishkaError(msg) from exc
+
+    container = context._request_state.get(CONTAINER_STATE_KEY)
     if container is None:
         msg = (
             f"Container not found in FastMCP request context for key "
