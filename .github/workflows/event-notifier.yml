@@ -1,0 +1,26 @@
+name: Event Notifier
+
+on:
+  issues:
+    types: [opened, reopened]
+  pull_request_target:
+    types: [opened, reopened]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  notify:
+    name: Telegram notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram notification
+        uses: reagento/relator@v1.6.0
+        with:
+          tg-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          tg-chat-id: ${{ vars.TELEGRAM_CHAT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
