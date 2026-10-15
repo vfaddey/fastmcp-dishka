@@ -137,8 +137,8 @@ jobs:
       - name: Verify required jobs succeeded
         run: |
           test '${{ needs.test.result }}' = success
-          test '${{ needs["test-latest-deps"].result }}' = success
-          test '${{ needs["test-lowest-deps"].result }}' = success
+          test '${{ needs['test-latest-deps'].result }}' = success
+          test '${{ needs['test-lowest-deps'].result }}' = success
           test '${{ needs.build.result }}' = success
 
   publish:
