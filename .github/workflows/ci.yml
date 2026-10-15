@@ -127,6 +127,20 @@ jobs:
           name: release-dists
           path: dist/
 
+  ci-gate:
+    name: CI gate
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs: [test, test-latest-deps, test-lowest-deps, build]
+
+    steps:
+      - name: Verify required jobs succeeded
+        run: |
+          test '${{ needs.test.result }}' = success
+          test '${{ needs["test-latest-deps"].result }}' = success
+          test '${{ needs["test-lowest-deps"].result }}' = success
+          test '${{ needs.build.result }}' = success
+
   publish:
     name: Publish to PyPI
     runs-on: ubuntu-latest
